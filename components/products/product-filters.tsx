@@ -1,187 +1,178 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Slider } from "@/components/ui/slider"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { X } from "lucide-react"
 import { useState } from "react"
+import { Slider } from "@/components/ui/slider"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Star } from "lucide-react"
 
-interface FilterState {
-  categories: string[]
-  vendors: string[]
-  priceRange: [number, number]
-  rating: number
-  inStock: boolean
+interface ProductFiltersProps {
+  categoryId?: string
 }
 
-export function ProductFilters() {
-  const [filters, setFilters] = useState<FilterState>({
-    categories: [],
-    vendors: [],
-    priceRange: [0, 1000],
-    rating: 0,
-    inStock: false,
-  })
+// Mock categories for development
+const mockCategories = [
+  { id: "electronics", name: "Electronics" },
+  { id: "audio", name: "Audio Equipment" },
+  { id: "computers", name: "Computers & Accessories" },
+  { id: "smartphones", name: "Smartphones & Tablets" },
+  { id: "clothing", name: "Clothing" },
+  { id: "home", name: "Home & Kitchen" },
+]
 
-  const categories = ["Electronics", "Clothing", "Home & Garden", "Sports", "Books", "Beauty"]
+// Mock vendors for development
+const mockVendors = [
+  { id: "vendor1", name: "AudioTech Pro" },
+  { id: "vendor2", name: "FitTech" },
+  { id: "vendor3", name: "EcoFashion" },
+  { id: "vendor4", name: "EcoLife" },
+  { id: "vendor5", name: "TechStore" },
+  { id: "vendor6", name: "HomeEssentials" },
+]
 
-  const vendors = ["TechStore", "FashionHub", "HomeDecor", "SportsPro", "BookWorld"]
+export function ProductFilters({ categoryId }: ProductFiltersProps) {
+  const [priceRange, setPriceRange] = useState([0, 1000])
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(categoryId ? [categoryId] : [])
+  const [selectedVendors, setSelectedVendors] = useState<string[]>([])
+  const [selectedRatings, setSelectedRatings] = useState<number[]>([])
+  const [inStock, setInStock] = useState(false)
+  const [onSale, setOnSale] = useState(false)
 
-  const handleCategoryChange = (category: string, checked: boolean) => {
-    setFilters((prev) => ({
-      ...prev,
-      categories: checked ? [...prev.categories, category] : prev.categories.filter((c) => c !== category),
-    }))
+  const handleCategoryChange = (categoryId: string, checked: boolean) => {
+    setSelectedCategories((prev) => (checked ? [...prev, categoryId] : prev.filter((id) => id !== categoryId)))
   }
 
-  const handleVendorChange = (vendor: string, checked: boolean) => {
-    setFilters((prev) => ({
-      ...prev,
-      vendors: checked ? [...prev.vendors, vendor] : prev.vendors.filter((v) => v !== vendor),
-    }))
+  const handleVendorChange = (vendorId: string, checked: boolean) => {
+    setSelectedVendors((prev) => (checked ? [...prev, vendorId] : prev.filter((id) => id !== vendorId)))
   }
 
-  const clearFilters = () => {
-    setFilters({
-      categories: [],
-      vendors: [],
-      priceRange: [0, 1000],
-      rating: 0,
-      inStock: false,
+  const handleRatingChange = (rating: number, checked: boolean) => {
+    setSelectedRatings((prev) => (checked ? [...prev, rating] : prev.filter((r) => r !== rating)))
+  }
+
+  const handleApplyFilters = () => {
+    // In a real app, this would update URL params or trigger a query
+    console.log({
+      priceRange,
+      selectedCategories,
+      selectedVendors,
+      selectedRatings,
+      inStock,
+      onSale,
     })
   }
 
-  const activeFiltersCount =
-    filters.categories.length + filters.vendors.length + (filters.rating > 0 ? 1 : 0) + (filters.inStock ? 1 : 0)
+  const handleResetFilters = () => {
+    setPriceRange([0, 1000])
+    setSelectedCategories(categoryId ? [categoryId] : [])
+    setSelectedVendors([])
+    setSelectedRatings([])
+    setInStock(false)
+    setOnSale(false)
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Filters</h3>
-        {activeFiltersCount > 0 && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
-            Clear All ({activeFiltersCount})
-          </Button>
-        )}
+      <div>
+        <h3 className="text-lg font-medium mb-4">Price Range</h3>
+        <Slider
+          defaultValue={priceRange}
+          min={0}
+          max={1000}
+          step={10}
+          value={priceRange}
+          onValueChange={setPriceRange}
+          className="mb-6"
+        />
+        <div className="flex items-center justify-between">
+          <span>${priceRange[0]}</span>
+          <span>${priceRange[1]}</span>
+        </div>
       </div>
 
-      {/* Active Filters */}
-      {activeFiltersCount > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {filters.categories.map((category) => (
-            <Badge key={category} variant="secondary" className="gap-1">
-              {category}
-              <X className="h-3 w-3 cursor-pointer" onClick={() => handleCategoryChange(category, false)} />
-            </Badge>
-          ))}
-          {filters.vendors.map((vendor) => (
-            <Badge key={vendor} variant="secondary" className="gap-1">
-              {vendor}
-              <X className="h-3 w-3 cursor-pointer" onClick={() => handleVendorChange(vendor, false)} />
-            </Badge>
-          ))}
+      {!categoryId && (
+        <div>
+          <h3 className="text-lg font-medium mb-4">Categories</h3>
+          <div className="space-y-3">
+            {mockCategories.map((category) => (
+              <div key={category.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`category-${category.id}`}
+                  checked={selectedCategories.includes(category.id)}
+                  onCheckedChange={(checked) => handleCategoryChange(category.id, checked === true)}
+                />
+                <Label htmlFor={`category-${category.id}`}>{category.name}</Label>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Categories */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Categories</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {categories.map((category) => (
-            <div key={category} className="flex items-center space-x-2">
+      <div>
+        <h3 className="text-lg font-medium mb-4">Vendors</h3>
+        <div className="space-y-3">
+          {mockVendors.map((vendor) => (
+            <div key={vendor.id} className="flex items-center space-x-2">
               <Checkbox
-                id={category}
-                checked={filters.categories.includes(category)}
-                onCheckedChange={(checked) => handleCategoryChange(category, checked as boolean)}
+                id={`vendor-${vendor.id}`}
+                checked={selectedVendors.includes(vendor.id)}
+                onCheckedChange={(checked) => handleVendorChange(vendor.id, checked === true)}
               />
-              <label htmlFor={category} className="text-sm cursor-pointer">
-                {category}
-              </label>
+              <Label htmlFor={`vendor-${vendor.id}`}>{vendor.name}</Label>
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Price Range */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Price Range</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Slider
-            value={filters.priceRange}
-            onValueChange={(value) => setFilters((prev) => ({ ...prev, priceRange: value as [number, number] }))}
-            max={1000}
-            step={10}
-            className="w-full"
-          />
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>${filters.priceRange[0]}</span>
-            <span>${filters.priceRange[1]}</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Vendors */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Vendors</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {vendors.map((vendor) => (
-            <div key={vendor} className="flex items-center space-x-2">
+      <div>
+        <h3 className="text-lg font-medium mb-4">Rating</h3>
+        <div className="space-y-3">
+          {[4, 3, 2, 1].map((rating) => (
+            <div key={rating} className="flex items-center space-x-2">
               <Checkbox
-                id={vendor}
-                checked={filters.vendors.includes(vendor)}
-                onCheckedChange={(checked) => handleVendorChange(vendor, checked as boolean)}
+                id={`rating-${rating}`}
+                checked={selectedRatings.includes(rating)}
+                onCheckedChange={(checked) => handleRatingChange(rating, checked === true)}
               />
-              <label htmlFor={vendor} className="text-sm cursor-pointer">
-                {vendor}
-              </label>
+              <Label htmlFor={`rating-${rating}`} className="flex items-center">
+                <span className="flex mr-1">
+                  {Array(5)
+                    .fill(0)
+                    .map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-4 w-4 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                      />
+                    ))}
+                </span>
+                <span>& Up</span>
+              </Label>
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Rating */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Minimum Rating</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Slider
-            value={[filters.rating]}
-            onValueChange={(value) => setFilters((prev) => ({ ...prev, rating: value[0] }))}
-            max={5}
-            step={0.5}
-            className="w-full"
-          />
-          <div className="text-sm text-gray-600 mt-2">{filters.rating} stars and above</div>
-        </CardContent>
-      </Card>
-
-      {/* Availability */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Availability</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <h3 className="text-lg font-medium mb-4">Availability</h3>
+        <div className="space-y-3">
           <div className="flex items-center space-x-2">
-            <Checkbox
-              id="inStock"
-              checked={filters.inStock}
-              onCheckedChange={(checked) => setFilters((prev) => ({ ...prev, inStock: checked as boolean }))}
-            />
-            <label htmlFor="inStock" className="text-sm cursor-pointer">
-              In Stock Only
-            </label>
+            <Checkbox id="in-stock" checked={inStock} onCheckedChange={(checked) => setInStock(checked === true)} />
+            <Label htmlFor="in-stock">In Stock</Label>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="on-sale" checked={onSale} onCheckedChange={(checked) => setOnSale(checked === true)} />
+            <Label htmlFor="on-sale">On Sale</Label>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Button onClick={handleApplyFilters}>Apply Filters</Button>
+        <Button variant="outline" onClick={handleResetFilters}>
+          Reset Filters
+        </Button>
+      </div>
     </div>
   )
 }

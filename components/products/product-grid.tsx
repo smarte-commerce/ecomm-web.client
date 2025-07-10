@@ -1,132 +1,180 @@
 "use client"
 
+import { useState } from "react"
 import { useProducts } from "@/hooks/use-products"
-import { ProductCard } from "./product-card"
-import { ProductCardSkeleton } from "./product-card-skeleton"
+import { ProductCard } from "@/components/products/product-card"
+import { ProductCardSkeleton } from "@/components/products/product-card-skeleton"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
+import { PAGINATION } from "@/lib/constants"
 
-export function ProductGrid() {
-  const { data: products, isLoading, error } = useProducts()
+interface ProductGridProps {
+  categoryId?: string
+  vendorId?: string
+  searchQuery?: string
+}
 
-  // Mock data for development
-  const mockProducts = [
-    {
-      id: "1",
-      name: "Premium Wireless Headphones",
-      price: 149.99,
-      originalPrice: 199.99,
+export function ProductGrid({ categoryId, vendorId, searchQuery }: ProductGridProps) {
+  const [sortBy, setSortBy] = useState<"newest" | "price" | "rating" | "popularity">("newest")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+  const [page, setPage] = useState(1)
+  const pageSize = PAGINATION.PRODUCTS_PER_PAGE
+
+  const { data: products, isLoading } = useProducts({
+    category: categoryId,
+    vendor: vendorId,
+    search: searchQuery,
+    sortBy,
+    sortOrder,
+    page,
+    limit: pageSize,
+  })
+
+  // Mock data for development when API is not available
+  const mockProducts = Array(12)
+    .fill(0)
+    .map((_, i) => ({
+      id: `mock-${i + 1}`,
+      name: `Product ${i + 1}`,
+      price: 19.99 + i * 10,
+      originalPrice: i % 3 === 0 ? 29.99 + i * 10 : undefined,
       images: ["/placeholder.svg?height=250&width=300"],
       vendorId: "vendor1",
-      vendorName: "AudioTech",
-      categoryId: "electronics",
-      inventory: 12,
-      rating: 4.8,
-      reviews: 234,
-      discount: 25,
-    },
-    {
-      id: "2",
-      name: "Smart Home Speaker",
-      price: 89.99,
-      images: ["/placeholder.svg?height=250&width=300"],
-      vendorId: "vendor2",
-      vendorName: "SmartHome Co",
-      categoryId: "electronics",
-      inventory: 8,
-      rating: 4.6,
-      reviews: 156,
-    },
-    {
-      id: "3",
-      name: "Ergonomic Office Chair",
-      price: 299.99,
-      originalPrice: 399.99,
-      images: ["/placeholder.svg?height=250&width=300"],
-      vendorId: "vendor3",
-      vendorName: "OfficeComfort",
-      categoryId: "furniture",
-      inventory: 5,
-      rating: 4.7,
-      reviews: 89,
-      discount: 25,
-    },
-    {
-      id: "4",
-      name: "Organic Skincare Set",
-      price: 79.99,
-      images: ["/placeholder.svg?height=250&width=300"],
-      vendorId: "vendor4",
-      vendorName: "NaturalBeauty",
-      categoryId: "beauty",
-      inventory: 20,
-      rating: 4.9,
-      reviews: 312,
-    },
-    {
-      id: "5",
-      name: "Fitness Resistance Bands",
-      price: 24.99,
-      originalPrice: 34.99,
-      images: ["/placeholder.svg?height=250&width=300"],
-      vendorId: "vendor5",
-      vendorName: "FitGear",
-      categoryId: "sports",
-      inventory: 35,
-      rating: 4.4,
-      reviews: 78,
-      discount: 29,
-    },
-    {
-      id: "6",
-      name: "Ceramic Coffee Mug Set",
-      price: 39.99,
-      images: ["/placeholder.svg?height=250&width=300"],
-      vendorId: "vendor6",
-      vendorName: "KitchenEssentials",
-      categoryId: "home",
-      inventory: 18,
-      rating: 4.5,
-      reviews: 124,
-    },
-  ]
-
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Array.from({ length: 9 }).map((_, i) => (
-          <ProductCardSkeleton key={i} />
-        ))}
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground mb-4">Failed to load products. Showing sample products.</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </div>
-    )
-  }
+      vendorName: "Vendor Name",
+      categoryId: categoryId || "category1",
+      inventory: 10 + i,
+      rating: 3.5 + (i % 2),
+      reviews: 10 + i * 5,
+      discount: i % 3 === 0 ? 20 : undefined,
+    }))
 
   const displayProducts = products && products.length > 0 ? products : mockProducts
+  const totalPages = 5 // Mock total pages
 
-  if (!displayProducts?.length) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">No products found.</p>
-      </div>
-    )
+  const handleSortChange = (value: string) => {
+    const [newSortBy, newSortOrder] = value.split("-") as ["newest" | "price" | "rating" | "popularity", "asc" | "desc"]
+    setSortBy(newSortBy)
+    setSortOrder(newSortOrder)
+  }
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {displayProducts.map((product) => (
-        <ProductCard key={product.id} product={product} />
-      ))}
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <p className="text-sm text-gray-500">
+          Showing <span className="font-medium">{(page - 1) * pageSize + 1}</span> to{" "}
+          <span className="font-medium">
+            {Math.min(page * pageSize, (products?.length || 0) + (page - 1) * pageSize)}
+          </span>{" "}
+          of <span className="font-medium">{products?.length || mockProducts.length * totalPages}</span> products
+        </p>
+
+        <Select defaultValue="newest-desc" onValueChange={handleSortChange}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest-desc">Newest</SelectItem>
+            <SelectItem value="price-asc">Price: Low to High</SelectItem>
+            <SelectItem value="price-desc">Price: High to Low</SelectItem>
+            <SelectItem value="rating-desc">Highest Rated</SelectItem>
+            <SelectItem value="popularity-desc">Most Popular</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array(6)
+            .fill(0)
+            .map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {displayProducts.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
+
+      <Pagination>
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                if (page > 1) handlePageChange(page - 1)
+              }}
+              className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+            />
+          </PaginationItem>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+            // Show first page, current page, last page, and pages around current
+            if (pageNum === 1 || pageNum === totalPages || (pageNum >= page - 1 && pageNum <= page + 1)) {
+              return (
+                <PaginationItem key={pageNum}>
+                  <PaginationLink
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handlePageChange(pageNum)
+                    }}
+                    isActive={pageNum === page}
+                  >
+                    {pageNum}
+                  </PaginationLink>
+                </PaginationItem>
+              )
+            }
+
+            // Show ellipsis for gaps
+            if (pageNum === 2 && page > 3) {
+              return (
+                <PaginationItem key="ellipsis-start">
+                  <PaginationEllipsis />
+                </PaginationItem>
+              )
+            }
+
+            if (pageNum === totalPages - 1 && page < totalPages - 2) {
+              return (
+                <PaginationItem key="ellipsis-end">
+                  <PaginationEllipsis />
+                </PaginationItem>
+              )
+            }
+
+            return null
+          })}
+
+          <PaginationItem>
+            <PaginationNext
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                if (page < totalPages) handlePageChange(page + 1)
+              }}
+              className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
     </div>
   )
 }
